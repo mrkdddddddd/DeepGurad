@@ -1,0 +1,8 @@
+__pycache__/
+changed_photos/
+myvenv/
+faces/
+output/
+photos/
+
+.vscode
