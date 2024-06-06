@@ -4,5 +4,6 @@ myvenv/
 faces/
 output/
 photos/
+models/
 
 .vscode
