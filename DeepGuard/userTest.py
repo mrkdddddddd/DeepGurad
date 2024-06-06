@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import messagebox
 import cv2
 from os import listdir
 from os.path import isfile, join
@@ -39,9 +38,14 @@ class FaceRecognitionApp:
         self.root = root
         self.root.title("Face Recognition App")
         self.root.geometry("800x600")
+        self.root.configure(bg='#404040')  # 배경색을 어두운 회색으로 설정
 
-        self.video_label = tk.Label(root)
+        self.video_label = tk.Label(root, bg='#404040')  # 비디오 라벨의 배경색도 어두운 회색으로 설정
         self.video_label.pack()
+
+        # 나가기 버튼을 동그란 버튼으로 생성하고 배경색과 글자색을 설정
+        self.exit_button = tk.Button(root, text="나가기", command=self.on_closing, bg='#404040', fg='white', width=10, height=2, relief="raised", borderwidth=0, highlightthickness=0, highlightbackground='white')
+        self.exit_button.pack(pady=10)
 
         self.cap = cv2.VideoCapture(0)
 
@@ -79,7 +83,6 @@ class FaceRecognitionApp:
             except:
                 cv2.putText(image, "Face Not Found", (250, 450), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 2)
 
-            cv2.imshow('Face Cropper', image)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(image)
             imgtk = ImageTk.PhotoImage(image=img)
@@ -95,5 +98,4 @@ class FaceRecognitionApp:
 if __name__ == "__main__":
     root = tk.Tk()
     app = FaceRecognitionApp(root)
-    root.protocol("WM_DELETE_WINDOW", app.on_closing)
     root.mainloop()

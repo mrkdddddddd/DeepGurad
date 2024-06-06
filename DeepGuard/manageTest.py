@@ -4,25 +4,22 @@ import os
 from os import listdir
 from os.path import isfile, join
 import tkinter as tk
+from tkinter import filedialog, messagebox
 from tkinter import simpledialog
 
-
-def create_models():
+def create_model():
     face_classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     def face_extractor(img):
-
         gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
         faces = face_classifier.detectMultiScale(gray,1.3,5)
-
-        if faces is():
+        if faces is ():
             return None
 
-        for(x,y,w,h) in faces:
+        for (x,y,w,h) in faces:
             cropped_face = img[y:y+h, x:x+w]
 
         return cropped_face
-
 
     cap = cv2.VideoCapture(0)
     count = 0
@@ -49,11 +46,9 @@ def create_models():
         if cv2.waitKey(1)==13 or count==100:
             break
 
-    print('Colleting Samples Complete!!!')
+    print('Collecting Samples Complete!!!')
 
-
-    # 증폭
-    # 이미지를 로드하고 디렉토리에서 파일명 리스트를 가져옴
+    # Augmentation
     photo_dir = "./faces/"
     changed_photo_dir = "./changed_photos/"
     photo_names = [f for f in os.listdir(photo_dir) if f.endswith('.jpg')]
@@ -61,37 +56,26 @@ def create_models():
     if not os.path.exists("changed_photos"):
         os.makedirs("changed_photos")
 
-    # 이미지 증폭을 위한 함수 정의
     def augment_image(image):
         augmented_images = []
         
-        # 원본 이미지 추가
         augmented_images.append(image)
         
-        # 이미지 반전
         flipped_image = cv2.flip(image, 1)
         augmented_images.append(flipped_image)
         
-        # 이미지 회전 및 기울기 변화
         rows, cols, _ = image.shape
         for angle in range(-10, 11, 5):
             M_rotation = cv2.getRotationMatrix2D((cols / 2, rows / 2), angle, 1)
             rotated_image = cv2.warpAffine(image, M_rotation, (cols, rows), borderMode=cv2.BORDER_REPLICATE)
             augmented_images.append(rotated_image)
         
-        # # 줌인, 줌아웃
-        # for scale_factor in [0.9, 1.1]:
-        #     scaled_image = cv2.resize(image, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_LINEAR)
-        #     augmented_images.append(scaled_image)
-        
-        # shear 조절
         shear_range = 10
         for shear in range(-shear_range, shear_range + 1, 5):
             M_shear = np.float32([[1, shear / 100, 0], [0, 1, 0]])
             sheared_image = cv2.warpAffine(image, M_shear, (cols, rows), borderMode=cv2.BORDER_REPLICATE)
             augmented_images.append(sheared_image)
         
-        # 밝기 조절
         for brightness in [-50, 50]:
             brightened_image = cv2.convertScaleAbs(image, beta=brightness)
             augmented_images.append(brightened_image)
@@ -101,24 +85,23 @@ def create_models():
     if not os.path.exists('changed_photos'):
         os.makedirs('changed_photos')
 
-    # 사진 증폭 작업 수행
     for photo_name in photo_names:
-        # 이미지 로드
         photo_path = os.path.join(photo_dir, photo_name)
         image = cv2.imread(photo_path)
         
-        # 이미지 증폭
         augmented_images = augment_image(image)
         
-        # 증폭된 이미지 저장
         base_name, ext = os.path.splitext(photo_name)
         for idx, augmented_image in enumerate(augmented_images):
             augmented_photo_name = f"{base_name}_augmented_{idx}{ext}"
             augmented_photo_path = os.path.join(changed_photo_dir, augmented_photo_name)
             cv2.imwrite(augmented_photo_path, augmented_image)
 
-
-    # 사용자 이름 입력 받는 GUI 생성
+    print('Augmentation Complete!!!')
+    cap.release()
+    cv2.destroyAllWindows()
+    
+        # 사용자 이름 입력 받는 GUI 생성
     root = tk.Tk()
     root.withdraw()  # Tkinter 창 숨기기
     user_name = simpledialog.askstring("Input", "Enter your name:")
@@ -147,3 +130,51 @@ def create_models():
     model.save(os.path.join(models_path, f"{user_name}_model.xml"))
 
     print("Model Training Complete!!!!!")
+
+class AdminPage:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Admin Page")
+        self.root.geometry("300x300")
+        self.manage_window = None  # Manage Models 창을 위한 속성 추가
+        
+        self.create_button = tk.Button(root, text="Create Model", command=create_model)
+        self.create_button.pack(pady=10)
+
+        self.manage_button = tk.Button(root, text="Manage Models", command=self.manage_models)
+        self.manage_button.pack(pady=10)
+
+        self.exit_button = tk.Button(root, text="Exit", command=self.root.destroy)
+        self.exit_button.pack(pady=10)
+
+    def manage_models(self):
+        models_path = 'models'
+        model_files = [f for f in listdir(models_path) if isfile(join(models_path, f)) and f.endswith('_model.xml')]
+        
+        self.manage_window = tk.Toplevel(self.root)
+        self.manage_window.title("Manage Models")
+        
+        self.model_listbox = tk.Listbox(self.manage_window)
+        self.model_listbox.pack(expand=True, fill=tk.BOTH)
+        for model_file in model_files:
+            self.model_listbox.insert(tk.END, model_file)
+
+        self.delete_button = tk.Button(self.manage_window, text="Delete", command=self.delete_model)
+        self.delete_button.pack(pady=10)
+
+        self.exit_button = tk.Button(self.manage_window, text="Exit", command=self.manage_window.destroy)
+        self.exit_button.pack(pady=10)
+
+    def delete_model(self):
+        selected_index = self.model_listbox.curselection()
+        if selected_index:
+            selected_model = self.model_listbox.get(selected_index[0])
+            if messagebox.askokcancel("Delete Model", f"Do you want to delete {selected_model}?"):
+                os.remove(os.path.join('models', selected_model))
+                self.model_listbox.delete(selected_index)
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    admin_page = AdminPage(root)
+    root.mainloop()
