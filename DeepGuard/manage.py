@@ -33,6 +33,9 @@ while True:
         face = cv2.resize(face_extractor(frame),(200,200))
         face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
 
+        if not os.path.exists('faces'):
+            os.makedirs('faces')
+
         file_name_path = 'faces/user'+str(count)+'.jpg'
         cv2.imwrite(file_name_path,face)
 
@@ -93,6 +96,9 @@ def augment_image(image):
         augmented_images.append(brightened_image)
     
     return augmented_images
+
+if not os.path.exists('changed_photos'):
+    os.makedirs('changed_photos')
 
 # 사진 증폭 작업 수행
 for photo_name in photo_names:
